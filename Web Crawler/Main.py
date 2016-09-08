@@ -7,41 +7,54 @@ import urllib
 import re
 import time
 
-base_url = 'https://www.stpauls.com/weekly-newsletter-for-'
-def getDays():
-    '''date = datetime.date.today()
+base_url = 'https://www.stpauls.com/sitemap.html'
+
+
+'''def getDays():
+    date = datetime.date.today()
     date_re = re.findall('-(\d\d)-', str(date))
     date_re = str(date_re).rstrip('\'\]')
     date_re = date_re.lstrip('\[\'')
     month = int(date_re)
     monthAbbr = calendar.month_abbr[month]
-    print monthAbbr'''
+    print monthAbbr
     cal = calendar.Calendar(6)
     weekList = cal.monthdatescalendar(int(time.strftime('%Y')), int(time.strftime('%m')))
-    return weekList
+    return weekList'''
 
 
-def getUrl(month, day, month2, day2):
-    if len(day) == 1:
-        day = day.zfill(2)
-    if len(day2) == 1:
-        day2 = day2.zfill(2)
-    if month == month2:
-        final_url = base_url + str(calendar.month_abbr[int(month)]).lower() + '-' + day + '-' + day2 + '\\'
-    else:
-        final_url = base_url + str(calendar.month_abbr[int(month)]).lower() + '-' + day + '-' + \
-                               str(calendar.month_abbr[int(month2)]).lower() + '-' + day2 + '/'
-    html = requests.get(final_url).content
+def getSiteMap():
+    html = requests.get(base_url).content
     return html
 
 
-def parseHtml(html):
+def parseSitemap(html):
     soup = BeautifulSoup(html, "html.parser")
-    divPost = soup.find('div', class_="post")
-    divPost_p = divPost.find('p')
-    divPost_pa = divPost_p.find('a')
-    link = divPost_pa['href']
-    return link
+    table = BeautifulSoup.find_all(soup, 'td')
+    linkList = []
+    for tag in table:
+        if re.search('post', str(tag)):
+            linkList.append(tag)
+
+    re1 = '.*?'  # Non-greedy match on filler
+    '.*
+    re2 = '((?:(?:[1]{1}\\d{1}\\d{1}\\d{1})|(?:[2]{1}\\d{3})))(?![\\d])'  # Year 1
+    re3 =?'  # Non-greedy match on filler
+    re4 = '((?:(?:[0-2]?\\d{1})|(?:[3][01]{1})))(?![\\d])'  # Day 1
+
+    dateList = []
+    for tag in linkList:
+        dateList.append(re.findall(re1+re2+re3+re4, str(tag)))
+    dateList.sort(reverse=True)
+    for tag in linkList:
+        if dateList[0][0][0] + '-' + dateList[0][0][1] in str(tag):
+            mostRecentSite = tag
+
+
+    soup = BeautifulSoup(str(mostRecentSite), "html.parser")
+    soup = soup.a
+    final_site = soup['href']
+    return final_site
 
 
 def getPDF(link):
@@ -53,11 +66,8 @@ def getPDF(link):
     file2 = open('test2.txt', 'w')
     file2.write(str(soup))'''
 
-
-weekList = getDays()
 try:
-    getPDF(parseHtml(getUrl(str(weekList[0][0].month), str(weekList[0][1].day),
-    str(weekList[0][6].month), str(weekList[0][7].day))))
+    parseSitemap(getSiteMap())
 except AttributeError as e:
     print "Unfortunately, this program does not keep track of all holidays that the school follows, so the newsletter cannot be downloaded"
     print e
