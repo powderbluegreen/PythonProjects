@@ -6,8 +6,10 @@ from bs4 import BeautifulSoup
 import urllib
 import re
 import time
+from types import NoneType
 
 base_url = 'https://www.stpauls.com/sitemap.html'
+test_url = 'https://www.stpauls.com/sitemap-pt-post-2016-08.html'
 
 
 '''def getDays():
@@ -23,8 +25,8 @@ base_url = 'https://www.stpauls.com/sitemap.html'
     return weekList'''
 
 
-def getSiteMap():
-    html = requests.get(base_url).content
+def getUrl(url):
+    html = requests.get(url).content
     return html
 
 
@@ -37,9 +39,8 @@ def parseSitemap(html):
             linkList.append(tag)
 
     re1 = '.*?'  # Non-greedy match on filler
-    '.*
     re2 = '((?:(?:[1]{1}\\d{1}\\d{1}\\d{1})|(?:[2]{1}\\d{3})))(?![\\d])'  # Year 1
-    re3 =?'  # Non-greedy match on filler
+    re3 = '.*?'  # Non-greedy match on filler
     re4 = '((?:(?:[0-2]?\\d{1})|(?:[3][01]{1})))(?![\\d])'  # Day 1
 
     dateList = []
@@ -49,13 +50,40 @@ def parseSitemap(html):
     for tag in linkList:
         if dateList[0][0][0] + '-' + dateList[0][0][1] in str(tag):
             mostRecentSite = tag
-
+            break
 
     soup = BeautifulSoup(str(mostRecentSite), "html.parser")
     soup = soup.a
     final_site = soup['href']
+    print final_site
     return final_site
 
+
+def parseSitemapSecond(html):
+    soup = BeautifulSoup(html, "html.parser")
+    soup = soup.find_all('td')
+    linkList = []
+    for tag in soup:
+        linkList.append(tag.a)
+    for tag in linkList:
+        if type(tag) == NoneType:
+            linkList.remove(tag)
+    linkListNewsletter = []
+    for tag in linkList:
+        if 'newsletter' in str(tag):
+            linkListNewsletter.append(tag)
+    final_site = linkListNewsletter[0]['href']
+    print final_site
+    return final_site
+
+
+def parseHtml(html):
+    soup = BeautifulSoup(html, "html.parser")
+    divPost = soup.find('div', class_="post")
+    divPost_p = divPost.find('p')
+    divPost_pa = divPost_p.find('a')
+    link = divPost_pa['href']
+    return link
 
 def getPDF(link):
     os.chdir('C:' + os.getenv('HOMEPATH') + '\\Desktop')
@@ -67,10 +95,7 @@ def getPDF(link):
     file2.write(str(soup))'''
 
 try:
-    parseSitemap(getSiteMap())
+    getPDF(parseHtml(getUrl(parseSitemapSecond(getUrl(parseSitemap(getUrl(base_url)))))))
 except AttributeError as e:
     print "Unfortunately, this program does not keep track of all holidays that the school follows, so the newsletter cannot be downloaded"
     print e
-
-
-
